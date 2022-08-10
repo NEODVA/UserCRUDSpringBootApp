@@ -3,17 +3,16 @@ package com.example.usercrudspringbootapp.entity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 @Entity
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name="user_preferences")
-public class UserPreferences {
+@Table(name = "user_preferences")
+public class UserPreferences implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
@@ -23,8 +22,21 @@ public class UserPreferences {
     @Column(name = "receive_sms")
     private boolean receiveSms = true;
 
+
+    public UserPreferences() {
+    }
+
+    public UserPreferences(boolean Email, boolean Sms) {
+        this.receiveEmail = Email;
+        this.receiveSms = Sms;
+    }
+
     public int getId() {
         return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public boolean getReceiveEmail() {

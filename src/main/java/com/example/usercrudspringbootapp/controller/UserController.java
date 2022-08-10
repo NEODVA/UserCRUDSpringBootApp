@@ -1,12 +1,9 @@
 package com.example.usercrudspringbootapp.controller;
 
 import javax.validation.Valid;
+
 import com.example.usercrudspringbootapp.entity.User;
-import com.example.usercrudspringbootapp.entity.UserIdRoleId;
-import com.example.usercrudspringbootapp.entity.UserPreferences;
 import com.example.usercrudspringbootapp.request.UserRequest;
-import com.example.usercrudspringbootapp.service.UserIdRoleIdService;
-import com.example.usercrudspringbootapp.service.UserPreferencesService;
 import com.example.usercrudspringbootapp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -17,48 +14,46 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api")
 public class UserController {
 
     private final UserService userService;
-    private final UserPreferencesService userPreferencesService;
-    private final UserIdRoleIdService userIdRoleIdService;
+
 
     @Autowired
-    public UserController(UserService userService, UserPreferencesService userPreferencesService, UserIdRoleIdService userIdRoleIdService) {
+    public UserController(UserService userService) {
         this.userService = userService;
-        this.userPreferencesService = userPreferencesService;
-
-        this.userIdRoleIdService = userIdRoleIdService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<User>> getUsers(){
-        List<User> list = userService.readUser();
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> list = userService.getAllUser();
         return new ResponseEntity<List<User>>(list, new HttpHeaders(), HttpStatus.OK);
     }
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUsersById(@PathVariable("id") Integer userId) {
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable("id") Integer userId) {
         User user = userService.getUserById(userId);
-        return  new ResponseEntity<User>(user, new HttpHeaders(),HttpStatus.OK);
+        return new ResponseEntity<User>(user, new HttpHeaders(), HttpStatus.OK);
     }
-    @PostMapping("/create")
+
+    @PostMapping("/users")
     public ResponseEntity<User> createUser(@Valid @RequestBody UserRequest userRequest) {
-        User user = userService.saveUser(userRequest);
+        User user = userService.createUser(userRequest);
         return new ResponseEntity<User>(user, new HttpHeaders(), HttpStatus.OK);
     }
 
-    @PutMapping("/{id}/update")
-    public ResponseEntity<User> updateUser(@RequestBody UserRequest userRequest,@PathVariable("id") Integer userId){
-        User user = userService.updateUser(userRequest,userId);
-        return new ResponseEntity<User>(user, new HttpHeaders(), HttpStatus.OK);
+    @PutMapping("/users/{id}")
+    public ResponseEntity<User> updateUser(@RequestBody UserRequest userRequest, @PathVariable("id") Integer userId) {
+        User user = userService.updateUser(userRequest, userId);
+        return new ResponseEntity<User>(user, HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
-    public HttpStatus userDelete(@PathVariable("id") Integer userId){
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<HttpStatus> userDelete(@PathVariable("id") Integer userId) {
 
         userService.deleteUser(userId);
-        return HttpStatus.FORBIDDEN;
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 }

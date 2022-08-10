@@ -1,72 +1,69 @@
 package com.example.usercrudspringbootapp.service;
+
+import com.example.usercrudspringbootapp.entity.Role;
 import com.example.usercrudspringbootapp.entity.User;
-import com.example.usercrudspringbootapp.entity.UserIdRoleId;
 import com.example.usercrudspringbootapp.entity.UserPreferences;
+import com.example.usercrudspringbootapp.repository.RoleRepository;
+import com.example.usercrudspringbootapp.repository.UserPreferencesRepository;
 import com.example.usercrudspringbootapp.repository.UserRepository;
 import com.example.usercrudspringbootapp.request.UserRequest;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
-    private final UserIdRoleIdService userIdRoleIdService;
-    private final UserPreferencesService userPreferencesService;
-
+    private final RoleRepository roleRepository;
+    private final UserPreferencesRepository userPreferencesRepository;
 
 
     @Autowired
-    public UserService(UserRepository userRepository, UserIdRoleIdService userIdRoleIdService, UserPreferencesService userPreferencesService) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, UserPreferencesRepository userPreferencesRepository) {
         this.userRepository = userRepository;
-        this.userIdRoleIdService = userIdRoleIdService;
-        this.userPreferencesService = userPreferencesService;
-
+        this.roleRepository = roleRepository;
+        this.userPreferencesRepository = userPreferencesRepository;
     }
-    public User saveUser(UserRequest userRequest){
-        User user = new User();
-        user.setLastName(userRequest.getLastName());
-        user.setFirstName(userRequest.getFirstName());
-        user.setUserName(userRequest.getUserName());
-        user.setPassword(userRequest.getPassword());
-        user.setPhoneNumber(userRequest.getPhoneNumber());
-        user.setEmail(userRequest.getEmail());
-        user.setDateOfBrith(userRequest.getDateOfBrith());
-        user.setHeight(userRequest.getHeight());
-        user.setWeight(userRequest.getWeight());
 
-        UserPreferences userPreferences = new UserPreferences();
-        userPreferences.setReceiveSms(userRequest.getPreferencesInfoSms());
-        userPreferences.setReceiveEmail(!userRequest.getPreferencesInfoSms());
-        userPreferences = userPreferencesService.saveUserPreferences(userPreferences);
+    public User createUser(UserRequest userRequest) {
 
-        user.setPreferencesId(userPreferences.getId());
-        user = userRepository.saveAndFlush(user);
+        User user1 = roleRepository.findById(userRequest.getRoleId()).map(role -> {
+            User user = new User();
+            user.setLastName(userRequest.getLastName());
+            user.setFirstName(userRequest.getFirstName());
+            user.setUserName(userRequest.getUserName());
+            user.setPassword(userRequest.getPassword());
+            user.setPhoneNumber(userRequest.getPhoneNumber());
+            user.setEmail(userRequest.getEmail());
+            user.setDateOfBrith(userRequest.getDateOfBrith());
+            user.setHeight(userRequest.getHeight());
+            user.setWeight(userRequest.getWeight());
+            user.addRole(role);
+            UserPreferences preferences = new UserPreferences(userRequest.getPeferencesInfoEmail(), userRequest.getPreferencesInfoSms());
+            //userPreferencesRepository.save(preferences);
+            user.setUserPreferences(preferences);
+            //preferences.setUser(user);
 
-        UserIdRoleId userIdRoleId = userIdRoleIdService.findByUserRolId(user.getId(),userRequest.getRoleId());
+            return userRepository.save(user);
 
-        if (userRequest.getRoleId() != null && userIdRoleId == null ){
-
-            userIdRoleId = new UserIdRoleId();
-            userIdRoleId.setUserId(user.getId());
-            userIdRoleId.setRoleId(userRequest.getRoleId());
-
-            userIdRoleIdService.saveUserIdRoleId(userIdRoleId);
-        }
-
-        userRepository.saveAndFlush(user);
-        return user;
+        }).orElseThrow(() ->
+                new ResourceNotFoundException("Not found Role with id = " + userRequest.getRoleId()));
+        return user1;
     }
-    public List readUser(){
+
+    public List<User> getAllUser() {
         return (List<User>) userRepository.findAll();
     }
-    public User getUserById(Integer userId){
-        return userRepository.findById(userId).get();
+
+    public User getUserById(Integer userId) {
+        return userRepository.findById(userId).orElseThrow(() ->
+                new ResourceNotFoundException("Not found User with id = " + userId));
     }
-    public User updateUser(UserRequest userRequest, Integer userId){
+
+    public User updateUser(UserRequest userRequest, Integer userId) {
         User user = getUserById(userId);
 
         if (userRequest.getFirstName() != null) {
@@ -96,39 +93,17 @@ public class UserService {
         if (userRequest.getWeight() != null) {
             user.setWeight(userRequest.getWeight());
         }
-        if (userRequest.getPreferencesId() != null){
-            UserPreferences userPreferences =  userPreferencesService.getUserPreferencesById(userRequest.getPreferencesId());
-            if (userRequest.getPreferencesInfoSms() != userPreferences.getReceiveSms()){
-                userPreferences.setReceiveSms(userRequest.getPreferencesInfoSms());
-                userPreferences.setReceiveEmail(!userRequest.getPreferencesInfoSms());
-                userPreferencesService.updateUserPreferences(userPreferences,userRequest.getPreferencesId());
-            }
+
+        if (userRequest.getRoleId() != null) {
+            Role role = roleRepository.findById(userRequest.getRoleId()).orElseThrow(() ->
+                    new ResourceNotFoundException("Not found Role with id = " + userRequest.getRoleId()));
+            user.addRole(role);
         }
-
-
-        if (userRequest.getRoleId() != null){
-            UserIdRoleId userIdRoleId = userIdRoleIdService.findByUserRolId(user.getId(),userRequest.getRoleId());
-
-            if (userRequest.getRoleId() != null && userIdRoleId == null ){
-
-                userIdRoleId = new UserIdRoleId();
-                userIdRoleId.setUserId(user.getId());
-                userIdRoleId.setRoleId(userRequest.getRoleId());
-
-                userIdRoleIdService.saveUserIdRoleId(userIdRoleId);
-            }
-
-
-        }
-
-        return  userRepository.saveAndFlush(user);
+        return userRepository.save(user);
     }
-    public void deleteUser(Integer userId){
-        User user = userRepository.findById(userId).orElse(null);
-        if (user != null){
-            userPreferencesService.deleteUserPreferences(user.getPreferencesId());
-            userRepository.deleteById(userId);
-            userIdRoleIdService.deleteByUserId(userId);
-        }
+
+    public void deleteUser(Integer userId) {
+        userRepository.deleteById(userId);
+
     }
 }
