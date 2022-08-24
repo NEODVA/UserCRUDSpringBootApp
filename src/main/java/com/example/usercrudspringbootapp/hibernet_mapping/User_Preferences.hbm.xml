@@ -1,0 +1,45 @@
+<?xml version = "1.0" encoding = "utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name = "com.example.usercrudspringbootapp.entity.User" table = "Users">
+
+        <meta attribute = "class-description">
+            This class contains the employee detail.
+        </meta>
+
+        <id name = "id" type = "int" column = "id">
+            <generator class="native"/>
+        </id>
+
+        <property name = "firstName" column = "first_name" type = "string"/>
+        <property name = "lastName" column = "last_name" type = "string"/>
+        <property name = "userName" column = "user_name" type = "string"/>
+        <property name = "phoneNumber" column = "phone_number" type = "string"/>
+        <property name = "password" column = "password" type = "string"/>
+        <property name = "email" column = "email" type = "string"/>
+        <property name = "dateOfBrith" column = "date_of_birth" type = "string"/>
+        <property name = "height" column = "height" type = "int"/>
+        <property name = "weight" column = "weight" type = "int"/>
+        <one-to-one name = "preferencesId"  class="com.example.usercrudspringbootapp.entity.UserPreferences" />
+
+    </class>
+
+    <class name = "com.example.usercrudspringbootapp.entity.UserPreferences" table="user_preferences">
+
+        <meta attribute = "class-description">
+            This class contains the address detail.
+        </meta>
+
+        <id name = "id" type = "int" column = "id">
+            <generator class="native"/>
+        </id>
+
+        <property name = "receiveEmail" column = "receive_email" type = "boolean"/>
+        <property name = "receiveSms" column = "receive_sms" type = "boolean"/>
+
+    </class>
+
+</hibernate-mapping>
